@@ -1,0 +1,59 @@
+version: "3.7"
+services:
+  producer_topic:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure
+    command: python producer_topic.py
+    depends_on:
+      - rabbitmq
+    networks:
+      - rabbit
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+
+  consumer_alpha_topic:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure
+    command: python consumer_topic.py
+    depends_on:
+      - rabbitmq
+    networks:
+      - rabbit
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+
+  consumer_beta_topic:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure
+    command: python consumer_topic.py
+    depends_on:
+      - rabbitmq
+    networks:
+      - rabbit
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+
+  rabbitmq:
+    image: rabbitmq:3.10-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+    networks:
+      - rabbit
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+
+networks:
+  rabbit:
+    driver: bridge
