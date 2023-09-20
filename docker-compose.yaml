@@ -1,11 +1,29 @@
 version: "3.7"
 services:
-  producer_topic:
+  producer:
     build:
       context: .
       dockerfile: Dockerfile
-    restart: on-failure
-    command: python producer_topic.py
+    command: python producer.py
+    volumes:
+      - ./producer.py:/app/producer.py
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - rabbit
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+
+  consumer_alpha:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python consumer.py
+    volumes:
+      - ./consumer.py:/app/consumer.py
+    restart: unless-stopped
     depends_on:
       - rabbitmq
     networks:
@@ -14,26 +32,14 @@ services:
       - RABBITMQ_DEFAULT_USER=admin
       - RABBITMQ_DEFAULT_PASS=admin
 
-  consumer_alpha_topic:
+  consumer_beta:
     build:
       context: .
       dockerfile: Dockerfile
-    restart: on-failure
-    command: python consumer_topic.py
-    depends_on:
-      - rabbitmq
-    networks:
-      - rabbit
-    environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin
-
-  consumer_beta_topic:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: on-failure
-    command: python consumer_topic.py
+    volumes:
+      - ./consumer.py:/app/consumer.py
+    restart: unless-stopped
+    command: python consumer.py
     depends_on:
       - rabbitmq
     networks:
@@ -45,8 +51,8 @@ services:
   rabbitmq:
     image: rabbitmq:3.10-management-alpine
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5673:5672"
+      - "15673:15672"
 
     networks:
       - rabbit

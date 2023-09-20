@@ -1,19 +1,32 @@
+import time
 import os
 import pika
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("consumer")
 
 
 def callback(ch, method, properties, body):
-    print(f" [x] Received {body}")
+    logger.info(f" [x] Received {body}")
 
 
 # Establish a connection to RabbitMQ server
 credentials = pika.PlainCredentials(
-    os.environ.get("RABBITMQ_DEFAULT_USER", ""),
-    os.environ.get("RABBITMQ_DEFAULT_PASS", ""),
+    os.environ.get("RABBITMQ_DEFAULT_USER", "admin"),
+    os.environ.get("RABBITMQ_DEFAULT_PASS", "admin"),
 )
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters("rabbitmq", credentials=credentials)
-)
+
+while True:
+    try:
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters("rabbitmq", credentials=credentials)
+        )
+        break
+    except pika.exceptions.AMQPConnectionError:
+        logger.warning("Waiting for RabbitMQ")
+        time.sleep(10)
+
 
 channel = connection.channel()
 
@@ -34,5 +47,7 @@ channel.queue_bind(exchange=exchange_name, queue=queue_name, routing_key=routing
 # Set up a consumer and define the callback function
 channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
 
-print(f' [*] Waiting for messages on topic "{routing_key}". To exit, press CTRL+C')
+logger.info(
+    f' [*] Waiting for messages on topic "{routing_key}". To exit, press CTRL+C'
+)
 channel.start_consuming()
